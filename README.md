@@ -1,100 +1,121 @@
-Projeto Aprimorado: Modelo Preditivo de Churn (End-to-End)
-Objetivo: Construir um sistema de Machine Learning ponta a ponta para prever a probabilidade de um cliente cancelar um serviço de telecomunicações (churn), com foco em clareza, reprodutibilidade e interpretação dos resultados.
-Passo 0: Planejamento e Ambiente
-Esta fase é sobre organizar o projeto. Um bom README.md no GitHub começa aqui.
-Ferramentas:
-Jupyter Notebook ou VS Code com a extensão Jupyter: Excelente para análises exploratórias.
-Bibliotecas Essenciais:
-pandas: Para manipulação de dados.
-numpy: Para operações numéricas.
-matplotlib e seaborn: Para visualização de dados.
-scikit-learn: Para pré-processamento, modelagem e avaliação.
-(Opcional, mas recomendado) lightgbm ou xgboost: Para modelos mais avançados.
-Instalação:
+🤖 API de Predição de Churn com FastAPI e Docker
+Este projeto implementa uma solução de ponta a ponta para um problema clássico de negócio: a predição de churn (cancelamento de serviço) de clientes em uma empresa de telecomunicações. O projeto abrange desde a análise exploratória dos dados até o deploy de um modelo de Machine Learning como uma API web robusta e conteinerizada.
+🎯 1. O Problema de Negócio
+A rotatividade de clientes (churn) é uma métrica crítica para empresas de serviço por assinatura, como as de telecomunicações. Adquirir um novo cliente custa significativamente mais do que reter um existente.
+O objetivo deste projeto é construir um serviço de Machine Learning que possa:
+Prever com alta acurácia se um cliente está propenso a cancelar seu contrato.
+Disponibilizar essa predição em tempo real através de uma API, permitindo que outros sistemas (CRM, plataformas de marketing, etc.) tomem ações proativas para reter o cliente.
+📊 2. Análise e Insights dos Dados (EDA)
+A análise exploratória (realizada no notebook Análise_churn_telco_customer.ipynb) revelou insights cruciais que guiaram a modelagem:
+Dataset Desbalanceado: Aproximadamente 26.5% dos clientes na base de dados cancelaram o serviço. Isso exigiu o uso de técnicas como a estratificação na divisão dos dados e a escolha da métrica ROC AUC como principal avaliador de performance.
+Fatores Comportamentais vs. Demográficos: A análise demonstrou que o comportamento do cliente é muito mais preditivo do que seus dados demográficos.
+Principais Indicadores de Churn:
+Tipo de Contrato: Clientes com contrato "Mês a Mês" têm uma taxa de churn drasticamente maior.
+Método de Pagamento: Pagamento via "Cheque Eletrônico" está associado a um churn mais elevado.
+Tempo de Contrato (Tenure): Clientes mais novos (baixo Tenure_Months) são mais propensos a cancelar.
+Serviços de Proteção: Clientes sem serviços como Online_Security, Online_Backup e Tech_Support tendem a sair mais.
+⚙️ 3. Metodologia de Machine Learning
+Para garantir um fluxo de trabalho robusto e replicável (princípios de MLOps), foi utilizada uma Pipeline do Scikit-learn.
+Pré-processamento (ColumnTransformer):
+Variáveis Numéricas (Tenure_Months, Monthly_Charges, etc.): Passaram por uma padronização utilizando StandardScaler.
+Variáveis Categóricas (Contract, Payment_Method, etc.): Foram transformadas usando OneHotEncoder para converter as categorias em formato numérico.
+Modelagem e Avaliação:
+Foram avaliados três modelos distintos: Regressão Logística, Random Forest e LightGBM.
+O LightGBM foi selecionado como o modelo final devido à sua excelente performance e eficiência, atingindo uma pontuação ROC AUC de 0.85 nos dados de teste, indicando um ótimo poder preditivo.
+Interpretabilidade do Modelo:
+As features mais importantes para o modelo LightGBM foram Tenure_Months, Monthly_Charges e Contract, confirmando os insights da análise exploratória.
+🚀 4. Tecnologias Utilizadas
+Python 3.9+
+Análise e Modelagem: Pandas, Scikit-learn, LightGBM, Joblib
+API: FastAPI (para alta performance) e Uvicorn
+Containerização: Docker e Docker Compose
+Validação de Dados: Pydantic
+📂 5. Estrutura do Projeto
+code
+Code
+/
+|-- artifacts/            # Armazena o pipeline treinado (pipeline_lgbm.pkl)
+|-- app/                  # Código fonte da API FastAPI
+|   |-- main.py
+|-- .dockerignore         # Arquivos a serem ignorados pelo Docker
+|-- Dockerfile            # Instruções para construir a imagem Docker
+|-- requirements.txt      # Dependências Python do projeto
+|-- README.md             # Esta documentação
+|-- Análise_churn_telco_customer.ipynb  # Notebook com a análise e treinamento do modelo
+💻 6. Como Executar a API Localmente
+Pré-requisitos:
+Git
+Docker instalado e em execução.
+Passos:
+Clone o repositório:
 code
 Bash
-pip install pandas numpy matplotlib seaborn scikit-learn jupyter lightgbm
-Base de Dados: Telco Customer Churn
-Onde encontrar: Facilmente localizável no Kaggle. É o padrão da indústria para este tipo de problema.
-Por que é ideal para iniciantes?
-Dados Tabulares: Estrutura clara de linhas (clientes) e colunas (características).
-Mix de Variáveis: Contém colunas numéricas (tenure, MonthlyCharges), categóricas (Contract, PaymentMethod) e um alvo binário claro (Churn), exigindo diferentes técnicas de pré-processamento.
-Problema Real: Reflete um desafio de negócios comum e de alto valor.
-Passo 1: Análise Exploratória de Dados (EDA) - Entendendo o Negócio
-O objetivo aqui não é apenas rodar códigos, mas sim gerar hipóteses sobre o que causa o churn.
-1.1. Carregamento e Inspeção Inicial
+git clone https://github.com/SEU_USUARIO/NOME_DO_REPOSITORIO.git
+cd NOME_DO_REPOSITORIO
+Construa a imagem Docker:
+Este comando lê o Dockerfile e monta a imagem da nossa aplicação com todas as dependências.
 code
-Python
-# Importando as bibliotecas
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# Configurações para melhor visualização
-sns.set_style('whitegrid')
-plt.rcParams['figure.figsize'] = (10, 6)
-
-# Carregar os dados
-# ATENÇÃO: Substitua 'caminho/para/seu/arquivo.csv' pelo local correto do seu arquivo.
-df = pd.read_csv('WA_Fn-UseC_-Telco-Customer-Churn.csv')
-
-# Visualizar as 5 primeiras e as 5 últimas linhas
-# Modelo Preditivo de Churn em Clientes de Telecom
-
-## 1. Objetivo de Negócio
-
-Este projeto visa reduzir a perda de receita causada pelo cancelamento de serviços (churn) em uma empresa de telecomunicações. Através da construção de um modelo de Machine Learning, buscamos **identificar proativamente os clientes com maior risco de churn**, permitindo que a área de negócio implemente estratégias de retenção direcionadas e eficazes.
-
-**Dataset:** [Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/telco-customer-churn) do Kaggle.
-
-## 2. Principais Insights da Análise Exploratória
-
-A análise inicial dos dados revelou padrões claros no comportamento dos clientes que cancelam o serviço:
-*   **Contrato Mensal é o Maior Vilão:** Clientes com contratos `Month-to-month` têm uma taxa de churn **4 vezes maior** que clientes com contratos anuais.
-*   **Vulnerabilidade no Início:** A maior parte do churn ocorre nos primeiros meses de contrato.
-*   **Pontos de Fricção:** O método de pagamento via `Electronic Check` está associado a uma taxa de churn duas vezes maior que os demais, sugerindo possíveis problemas na experiência de pagamento.
-
-*(Insira aqui o gráfico aprimorado: Tipo de Contrato vs. Churn)*
-
-## 3. Metodologia de Machine Learning
-
-Para garantir um processo robusto e reprodutível, foi utilizado um fluxo de trabalho profissional com `Scikit-learn Pipelines`:
-1.  **Pré-processamento Encapsulado:** Um `ColumnTransformer` foi usado para aplicar `StandardScaler` em variáveis numéricas e `OneHotEncoder` em variáveis categóricas de forma segura, evitando *data leakage*.
-2.  **Divisão Estratificada:** Os dados foram divididos em 80% para treino e 20% para teste, com estratificação para manter a proporção original de churn em ambos os conjuntos.
-3.  **Modelagem Comparativa:** Três algoritmos diferentes foram treinados e avaliados para determinar a melhor performance.
-
-## 4. Resultados dos Modelos
-
-Os modelos foram avaliados com foco na métrica **ROC AUC**, que é ideal para cenários com classes desbalanceadas. O **LightGBM** apresentou a melhor performance, demonstrando maior capacidade de distinguir clientes que irão cancelar daqueles que não irão.
-
-| Modelo                | ROC AUC Score | Recall (Churn) | Precision (Churn) |
-| :-------------------- | :-----------: | :------------: | :---------------: |
-| Regressão Logística   |     *0.844*   |      *0.55*    |       *0.65*      |
-| Random Forest         |     *0.825*   |      *0.49*    |       *0.65*      |
-| **LightGBM**          |   **0.846**   |    **0.53**    |     **0.66**      |
-
-*(**Nota:** Preencha a tabela com seus resultados reais! Estes são valores representativos.)*
-
-*(Insira aqui o gráfico da Curva ROC Comparativa)*
-
-A análise de **Importância das Features** do modelo LightGBM confirmou que o tipo de contrato, o tempo de permanência (`tenure`) e o valor total cobrado (`TotalCharges`) são os principais preditores de churn.
-
-*(Insira aqui o gráfico: Top 15 Features Mais Importantes)*
-
-## 5. Conclusão e Próximos Passos
-
-O modelo **LightGBM** foi selecionado como a solução final devido à sua performance superior (AUC de 0.846). Ele é capaz de fornecer à equipe de negócio uma lista priorizada de clientes com alta probabilidade de churn, permitindo ações de retenção focadas.
-
-**Recomendação de Negócio:** Focar as campanhas de retenção em **clientes de contrato mensal nos primeiros 12 meses**, oferecendo incentivos para a migração para planos anuais e investigando possíveis melhorias na experiência de pagamento com cheque eletrônico.
-
-**Próximos Passos (Melhorias Futuras):**
-*   **Otimização de Hiperparâmetros:** Utilizar `GridSearchCV` ou `RandomizedSearchCV` para encontrar a combinação ideal de parâmetros para o LightGBM.
-*   **Engenharia de Features:** Criar novas variáveis (ex: razão entre cobrança mensal e total) para potencialmente melhorar a performance do modelo.
-*   **Deploy do Modelo:** Empacotar o pipeline treinado e disponibilizá-lo através de uma API para realizar predições em tempo real.
-
-## 6. Como Executar o Projeto
-
-1.  Clone este repositório.
-2.  Crie um ambiente virtual e instale as dependências: `pip install -r requirements.txt`
-3.  Execute o Jupyter Notebook: `notebooks/analise_churn.ipynb`.
+Bash
+docker build -t churn-api .
+Execute o container:
+Este comando inicia um container a partir da imagem, mapeando a porta 8000 da sua máquina para a porta 8000 do container.
+code
+Bash
+docker run -d -p 8000:8000 --name churn-app churn-api
+A API está pronta!
+Você pode verificar se o container está rodando com docker ps.
+📖 7. Endpoints da API
+Após iniciar o container, a API estará acessível em http://localhost:8000.
+GET / - Health Check
+Endpoint para verificar se a API está no ar e funcionando.
+URL: http://localhost:8000
+Resposta de Sucesso (200 OK):
+code
+JSON
+{
+  "status": "ok",
+  "message": "API de Predição de Churn está no ar!"
+}
+POST /predict - Predição de Churn
+Recebe os dados de um cliente em formato JSON e retorna a predição de churn e a probabilidade de confiança.
+URL: http://localhost:8000/predict
+Corpo da Requisição (Exemplo):
+code
+JSON
+{
+  "Gender": "Female",
+  "Senior_Citizen": "No",
+  "Partner": "Yes",
+  "Dependents": "No",
+  "Tenure_Months": 1,
+  "Phone_Service": "No",
+  "Multiple_Lines": "Phone_service",
+  "Internet_Service": "DSL",
+  "Online_Security": "No",
+  "Online_Backup": "Yes",
+  "Device_Protection": "No",
+  "Tech_Support": "No",
+  "Streaming_TV": "No",
+  "Streaming_Movies": "No",
+  "Contract": "Month-to-month",
+  "Paperless_Billing": "Yes",
+  "Payment_Method": "Electronic_check",
+  "Monthly_Charges": 29.85,
+  "Total_Charges": 29.85
+}
+Resposta de Sucesso (200 OK):
+code
+JSON
+{
+  "predicao": "Sim",
+  "probabilidade_de_confianca": "62.34%"
+}
+📄 Documentação Interativa (Swagger)
+O FastAPI gera automaticamente uma documentação interativa. Você pode acessá-la para visualizar todos os endpoints e testá-los diretamente pelo navegador:
+URL: http://localhost:8000/docs
+🔮 8. Próximos Passos
+Este projeto serve como uma base sólida. As próximas etapas para evoluí-lo seriam:
+Otimização de Hiperparâmetros: Utilizar GridSearchCV ou RandomizedSearchCV para encontrar os melhores parâmetros para o LightGBM e potencialmente aumentar a performance.
+CI/CD: Implementar um pipeline de Integração e Entrega Contínua (usando GitHub Actions, por exemplo) para automatizar testes e deploys.
+Deploy na Nuvem: Publicar a imagem Docker em um serviço como Google Cloud Run, AWS Fargate ou Azure Container Instances para tornar a API publicamente acessível.
+Monitoramento: Adicionar logging e monitoramento para acompanhar a performance do modelo e da API em produção.

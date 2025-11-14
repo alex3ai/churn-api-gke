@@ -1,0 +1,29 @@
+# Ambientes Virtuais
+.venv/
+venv/
+env/
+ENV/
+
+# Arquivos de Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos de Configuração de IDEs
+.vscode/
+.idea/
+.project
+.classpath
+
+# Arquivos de Notebooks Jupyter
+.ipynb_checkpoints/
+
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de dependências e pacotes
+dist/
+build/
+*.egg-info/

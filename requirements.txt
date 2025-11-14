@@ -1,0 +1,12 @@
+# Framework da API
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Machine Learning e Manipulação de Dados
+lightgbm==4.6.0
+scikit-learn==1.7.2
+pandas==2.1.3
+joblib==1.3.2
+
+# Validação de dados (usado pelo FastAPI)
+pydantic==2.5.2
