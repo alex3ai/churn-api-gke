@@ -108,7 +108,7 @@ docker run -d -p 8000:8000 --name churn-app churn-api
 **A API está pronta!** Você pode verificar se o container está rodando com `docker ps`.
 
 
-## 📖 7. Endpoints da API**
+## 📖 7. Endpoints da API
 Após iniciar o container, a API estará acessível em `http://localhost:8000`.
 
 **GET `/` - Health Check**
@@ -170,7 +170,7 @@ O FastAPI gera automaticamente uma documentação interativa. Você pode acessá
 
 * **URL:** `http://localhost:8000/docs`
 
-## 🔮 8. Próximos Passos**
+## 🔮 8. Próximos Passos
 Este projeto serve como uma base sólida. As próximas etapas para evoluí-lo seriam:
 
 * **Otimização de Hiperparâmetros:** Utilizar `GridSearchCV` ou `RandomizedSearchCV` para encontrar os melhores parâmetros para o LightGBM e potencialmente aumentar a performance.
@@ -181,5 +181,5 @@ Este projeto serve como uma base sólida. As próximas etapas para evoluí-lo se
 
 * **Monitoramento:** Adicionar logging e monitoramento para acompanhar a performance do modelo e da API em produção.
 
-**##👨‍💻 Autor**
-* **Alex** - github.com/alex3ai
+## 👨‍💻 Autor
+* **Alex** - [github.com/alex3ai](https://github.com/alex3ai)
