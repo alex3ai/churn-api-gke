@@ -3,10 +3,10 @@ kind: Service
 metadata:
   name: churn-api-service
 spec:
-  type: LoadBalancer # IP Externo
+  type: LoadBalancer
   selector:
     app: churn-api
   ports:
   - protocol: TCP
-    port: 80       # Porta WEB
-    targetPort: 8000 # Porta da API
+    port: 80
+    targetPort: 8000

@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: churn-api-deployment
 spec:
-  replicas: 2 # Alta disponibilidade
+  replicas: 2
   selector:
     matchLabels:
       app: churn-api
@@ -14,10 +14,9 @@ spec:
     spec:
       containers:
       - name: churn-api-container
-        # Caminho da imagem no Registry
         image: us-central1-docker.pkg.dev/capstone-479209/churn-api-repo/churn-api-image:latest
         ports:
-        - containerPort: 8000 # Deve bater com o Dockerfile
+        - containerPort: 8000
         resources:
           limits:
             memory: "512Mi"
