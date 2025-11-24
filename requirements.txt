@@ -1,6 +1,6 @@
 # Framework da API
 fastapi
-uvicorn
+uvicorn[standard]
 
 # Machine Learning e Manipulação de Dados
 lightgbm
