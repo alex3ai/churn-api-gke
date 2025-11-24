@@ -13,35 +13,33 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 app = FastAPI(
     title="API de Predição de Churn",
     description="Uma API para prever a probabilidade de um cliente cancelar um serviço com base em seus dados.",
-    version="1.0.2" # Versão atualizada
+    version="1.0.3" # Versão ajustada para GKE
 )
 
 # --- Carregamento dos Artefatos ---
 try:
+    # O main.py está em /code/app
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    # O main.py está dentro de 'app', então o pipeline está no mesmo nível
-    MODEL_PATH = os.path.join(BASE_DIR, 'pipeline_lgbm.pkl')
+    
+    # Os artefatos estão em /code/artifacts (voltando um nível de 'app')
+    ARTIFACTS_DIR = os.path.join(BASE_DIR, "../artifacts")
+    MODEL_PATH = os.path.join(ARTIFACTS_DIR, 'pipeline_lgbm.pkl')
     
     if not os.path.exists(MODEL_PATH):
-        logging.error(f"Arquivo do modelo não encontrado: {MODEL_PATH}")
-        # Tenta o caminho alternativo (se 'main.py' estiver na raiz)
-        MODEL_PATH = os.path.join(BASE_DIR, 'artifacts/pipeline_lgbm.pkl')
-        if not os.path.exists(MODEL_PATH):
-             raise FileNotFoundError(f"Arquivo 'pipeline_lgbm.pkl' não encontrado em nenhum caminho esperado.")
+        raise FileNotFoundError(f"Arquivo 'pipeline_lgbm.pkl' não encontrado em: {MODEL_PATH}")
 
     model = joblib.load(MODEL_PATH)
     logging.info(f"{MODEL_PATH} carregado com sucesso. API pronta.")
 
 except Exception as e:
     logging.error(f"Erro crítico ao carregar 'pipeline_lgbm.pkl': {e}")
+    # Importante: Se o modelo falhar, a API não deve subir (fail fast)
     raise RuntimeError(f"Falha ao carregar o artefato de ML: {e}")
 
 
 # 2. Definindo o Schema de Entrada com Pydantic
 class CustomerData(BaseModel):
     Gender: str
-    # --- CORREÇÃO AQUI ---
-    # O modelo foi treinado com esta coluna como 'object' (string), não 'int'
     Senior_Citizen: str 
     Partner: str
     Dependents: str
@@ -61,12 +59,11 @@ class CustomerData(BaseModel):
     Monthly_Charges: float
     Total_Charges: float
     
-    # Exemplo para a documentação automática do FastAPI
     class Config:
         json_schema_extra = {
             "example": {
                 "Gender": "Female", 
-                "Senior_Citizen": "No", # <-- CORRIGIDO DE 0 PARA "No"
+                "Senior_Citizen": "No",
                 "Partner": "Yes", 
                 "Dependents": "No",
                 "Tenure_Months": 1, 
@@ -90,7 +87,7 @@ class CustomerData(BaseModel):
 # 3. Endpoint de "Health Check"
 @app.get("/", tags=["Health_Check"])
 def read_root():
-    return {"status": "ok", "message": "API de Predição de Churn está no ar!"}
+    return {"status": "ok", "message": "API de Predição de Churn está no ar (GKE)!"}
 
 # 4. Endpoint de Predição
 @app.post("/predict", tags=["Prediction"])
@@ -102,7 +99,7 @@ def predict_churn(data: CustomerData):
         # 1. Converter os dados de entrada em um DataFrame do Pandas
         input_df = pd.DataFrame([data.model_dump()])
 
-        # 2. Fazer a Predição (O pipeline cuida de todo o pré-processamento)
+        # 2. Fazer a Predição
         prediction = model.predict(input_df)[0]
         probability = model.predict_proba(input_df)[0]
 
@@ -117,5 +114,4 @@ def predict_churn(data: CustomerData):
 
     except Exception as e:
         logging.error(f"Erro durante a predição: {e}", exc_info=True)
-        # Retorna um erro HTTP 500 se algo der errado
         raise HTTPException(status_code=500, detail=f"Erro interno no servidor: {e}")

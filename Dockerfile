@@ -1,52 +1,53 @@
-# --- ESTÁGIO 1: O "Builder" ---
-# Usamos uma imagem Python completa para instalar as dependências
-FROM python:3.11-slim AS builder
+# --- ESTÁGIO 1: Builder (Compilação) ---
+# Usamos a mesma versão do Python que você usou para treinar (3.9 para segurança)
+FROM python:3.9-slim AS builder
 
-# Define o diretório de trabalho
-WORKDIR /usr/src/app
+WORKDIR /build
 
-# Define a variável de ambiente para não gerar arquivos .pyc (Sintaxe corrigida)
+# Variáveis para otimizar o Python
 ENV PYTHONDONTWRITEBYTECODE=1
-# Garante que o output do python não seja bufferizado (Sintaxe corrigida)
 ENV PYTHONUNBUFFERED=1
 
-# Instala o pipenv para gerenciar dependências de forma mais robusta (opcional, mas bom)
-# RUN pip install --upgrade pip
-
-# Copia o arquivo de dependências e instala
+# Instala dependências e gera wheels
 COPY requirements.txt .
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r requirements.txt
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /build/wheels -r requirements.txt
 
 
-# --- ESTÁGIO 2: O "Final" ---
-# Usamos uma imagem "slim" que é muito menor
-FROM python:3.11-slim AS final
-# Instala a dependência de sistema (OpenMP)
-RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
+# --- ESTÁGIO 2: Final (Execução) ---
+FROM python:3.9-slim AS final
 
-# Cria um usuário não-root para rodar a aplicação (mais seguro)
+# 1. Instala dependências de SO (LightGBM precisa de libgomp1)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
+
+# 2. Cria usuário não-root (Segurança)
+# Isso impede que hackers tenham acesso root se invadirem o container
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
-# Define o diretório de trabalho
-WORKDIR /home/appuser/app
+# 3. Define o diretório de trabalho padrão
+WORKDIR /code
 
-# Copia as dependências pré-compiladas do estágio "builder"
-COPY --from=builder /usr/src/app/wheels /wheels
-COPY --from=builder /usr/src/app/requirements.txt .
+# 4. Copia as dependências compiladas do estágio anterior
+COPY --from=builder /build/wheels /wheels
+COPY --from=builder /build/requirements.txt .
 
-# Instala as dependências a partir dos arquivos locais (muito mais rápido)
+# 5. Instala os pacotes Python
 RUN pip install --no-cache /wheels/*
 
-# Copia os artefatos e o código da aplicação
-COPY ./artifacts ./artifacts
-COPY ./app ./app
+# 6. Copia a aplicação mantendo a estrutura original
+# IMPORTANTE: Copiamos 'app' e 'artifacts' como irmãos.
+# O Python dentro de 'app/main.py' vai usar '../artifacts' para achar o modelo.
+COPY ./app /code/app
+COPY ./artifacts /code/artifacts
 
-# --- CORREÇÃO ADICIONADA AQUI ---
-# Copia o modelo (pipeline) que estava faltando para DENTRO da pasta 'app'
-COPY artifacts/pipeline_lgbm.pkl ./app/
+# 7. Ajusta permissões para o usuário restrito
+# O usuário 'appuser' precisa ser dono dos arquivos para ler/executar
+RUN chown -R appuser:appgroup /code
 
-# Expõe a porta que a API vai usar
-EXPOSE 8000
+# 8. Muda para o usuário seguro
 USER appuser
-# Comando para iniciar a API quando o container for executado
+
+# 9. Expõe a porta e roda
+EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
